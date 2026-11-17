@@ -1,3 +1,4 @@
+##fileformat=VCFv4.1
 ##reference=file:///WORK2/gzfezx_shhli_3/BioDatahub/human_reference/GRCh37/human_g1k_v37.fasta
 ##contig=<ID=1,length=249250621>
 ##contig=<ID=2,length=243199373>

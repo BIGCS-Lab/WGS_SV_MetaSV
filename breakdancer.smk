@@ -3,7 +3,7 @@ rule breakdancer_step1:
     input:
         "{PWD}/data/{id}.bam"
     output:
-        "{PWD}/{id}/breakdancer/{id}.cfg"
+        "{PWD}/breakdancer/{id}.cfg"
     params:
         config['params']['breakdancer']
     shell:
@@ -11,9 +11,9 @@ rule breakdancer_step1:
 
 rule breakdancer_step2:
     input:
-        "{PWD}/{id}/breakdancer/{id}.cfg"
+        "{PWD}/breakdancer/{id}.cfg"
     output:
-        "{PWD}/{id}/breakdancer/{id}.cfg.SV.output"
+        "{PWD}/breakdancer/{id}.cfg.SV.output"
     params:
         config['params']['breakdancer']
     shell:

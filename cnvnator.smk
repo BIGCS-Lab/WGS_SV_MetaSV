@@ -1,7 +1,13 @@
 def get_bin_size(depth):
+    '''
+    Specifically, given the same data quality and read length, we observed that the optimal bin size,
+    and thus breakpoint resolution accuracy, scales roughly inversely with the coverage, 
+    resulting in ~100-bp bins for 20-30x coverage, ~500-bp bins for 4-6x coverage, and ~30-bp bins for ~100x coverage.
+    https://genome.cshlp.org/content/21/6/974.full
+    '''
     if 100 >= depth >60:
         bin_size = 30
-    elif 50 >= depth > 40:
+    elif 60 >= depth > 40:
         bin_size = 50
 
     elif 40 >= depth > 10:
@@ -13,11 +19,20 @@ def get_bin_size(depth):
         bin_size = 1000
     return bin_size
 
-if str(config["params"]["depth"]).isdigit():
-    bin_size = get_bin_size(int(config["params"]["depth"]))
+import ast
+
+def is_number(s):
+    try:
+        ast.literal_eval(str(s))
+        return True
+    except (ValueError, SyntaxError):
+        return False
+
+if is_number(config["params"]["depth"]):
+    bin_size = get_bin_size(float(config["params"]["depth"]))
 else:
     depth = config["params"]["depth"].strip("x")
-    depth = int(depth.strip("X"))
+    depth = float(depth.strip("X"))
     bin_size = get_bin_size(depth)
 
 # get the alignment information from the bam file
@@ -26,7 +41,7 @@ rule cnvnator_step1:
         bam = "{PWD}/data/{id}.bam",
         ref = REF
     output:
-        "{PWD}/{id}/cnvnator/{id}.root"
+        "{PWD}/cnvnator/{id}.root"
     params:
         config["params"]["cnvnator"]
     shell:
@@ -34,37 +49,36 @@ rule cnvnator_step1:
 
 rule cnvnator_step2:
     input:
-        root = "{PWD}/{id}/cnvnator/{id}.root",
+        root = "{PWD}/cnvnator/{id}.root",
         ref = REF
     output:
-        "{PWD}/{id}/cnvnator/{id}.cnvnator"
+        "{PWD}/cnvnator/{id}.cnvnator"
     params:
         env = config["params"]["cnvnator"],
         bin_size = bin_size
     shell:
         """
         # Step2生成柱形图 
-        {params.env}/cnvnator -root {input.root} -his {params.bin_size} -fasta {input.ref} -d {wildcards.PWD}/{wildcards.id}/cnvnator && \
+        {params.env}/cnvnator -root {input.root} -his {params.bin_size} -fasta {input.ref} -d {wildcards.PWD}/cnvnator && \
         # Step3统计量计算
-        {params.env}/cnvnator -root {input.root} -stat {params.bin_size} -d {wildcards.PWD}/{wildcards.id}/cnvnator  && \
+        {params.env}/cnvnator -root {input.root} -stat {params.bin_size} -d {wildcards.PWD}/cnvnator  && \
         # Step4 RD信号分割
-        {params.env}/cnvnator -root {input.root} -partition {params.bin_size} -ngc -d {wildcards.PWD}/{wildcards.id}/cnvnator  && \
+        {params.env}/cnvnator -root {input.root} -partition {params.bin_size} -ngc -d {wildcards.PWD}/cnvnator  && \
         {params.env}/cnvnator -root {input.root} -call {params.bin_size} -ngc > {output}
         """
 
-
 rule cnvnator_step3:
     input:
-        cnvroot = "{PWD}/{id}/cnvnator/{id}.cnvnator",
+        cnvroot = "{PWD}/cnvnator/{id}.cnvnator",
         ref = REF
     output:
-        "{PWD}/{id}/cnvnator/{id}.cnvnator.vcf"
+        "{PWD}/cnvnator/{id}.cnvnator.vcf"
     params:
         env = config["params"]["cnvnator"],
-        # sample = config['samples']['id'],
+        sample = config['samples']['id'],
         chr = config["params"]["ref_fa_chr"]
     shell:
-        "{params.env}/perl {params.env}/cnvnator2VCF.pl -prefix {wildcards.PWD}/{wildcards.id} -reference {input.ref} "
+        "{params.env}/perl {params.env}/cnvnator2VCF.pl -prefix {wildcards.PWD}/{params.sample} -reference {input.ref} "
         "{input.cnvroot} {params.chr} > {output}"
 
 # rule cnvnator_filter:

@@ -2,7 +2,7 @@ rule lumpy_step1_get_discordants_bam:
     input:
         "{PWD}/data/{id}.bam"
     output:
-        "{PWD}/{id}/lumpy/{id}.discordants.unsorted.bam"
+        "{PWD}/lumpy/{id}.discordants.unsorted.bam"
     params:
         lumpy_path = config["params"]["lumpy"],
         threads = config["threads"],
@@ -12,9 +12,9 @@ rule lumpy_step1_get_discordants_bam:
 
 rule lumpy_step1_sort_discordants_bam:
     input:
-        "{PWD}/{id}/lumpy/{id}.discordants.unsorted.bam"
+        "{PWD}/lumpy/{id}.discordants.unsorted.bam"
     output:
-        "{PWD}/{id}/lumpy/{id}.discordants.bam"
+        "{PWD}/lumpy/{id}.discordants.bam"
     params:
         lumpy_path = config["params"]["lumpy"],
         threads = config["threads"],
@@ -26,7 +26,7 @@ rule lumpy_step2_get_splitters_bam:
     input:
         "{PWD}/data/{id}.bam"
     output:
-        "{PWD}/{id}/lumpy/{id}.splitters.unsorted.bam"
+        "{PWD}/lumpy/{id}.splitters.unsorted.bam"
     params:
         lumpy_path = config["params"]["lumpy"],
         threads = config["threads"],
@@ -36,9 +36,9 @@ rule lumpy_step2_get_splitters_bam:
 
 rule lumpy_step3_sort_splitters_bam:
     input:
-        "{PWD}/{id}/lumpy/{id}.splitters.unsorted.bam"
+        "{PWD}/lumpy/{id}.splitters.unsorted.bam"
     output:
-        "{PWD}/{id}/lumpy/{id}.splitters.bam"
+        "{PWD}/lumpy/{id}.splitters.bam"
     params:
         lumpy_path = config["params"]["lumpy"],
         threads = config["threads"],
@@ -48,11 +48,11 @@ rule lumpy_step3_sort_splitters_bam:
 
 rule lumpy_step4_run_lumpy:
     input:
-        discordants = "{PWD}/{id}/lumpy/{id}.discordants.bam",
-        splitters = "{PWD}/{id}/lumpy/{id}.splitters.bam",
+        discordants = "{PWD}/lumpy/{id}.discordants.bam",
+        splitters = "{PWD}/lumpy/{id}.splitters.bam",
         raw_bam = "{PWD}/data/{id}.bam"
     output:
-        "{PWD}/{id}/lumpy/{id}.lumpy.vcf"
+        "{PWD}/lumpy/{id}.lumpy.vcf"
     params:
         lumpy_path = config["params"]["lumpy"],
         threads = config["threads"]
@@ -63,21 +63,21 @@ rule lumpy_step4_run_lumpy:
 
 rule lumpy_genotyped_vcf:
     input:
-        vcf = "{PWD}/{id}/lumpy/{id}.lumpy.vcf",
+        vcf = "{PWD}/lumpy/{id}.lumpy.vcf",
         bam = "{PWD}/data/{id}.bam"
     output:
-        "{PWD}/{id}/lumpy/{id}.genotyped.vcf"
+        "{PWD}/lumpy/{id}.genotyped.vcf"
     params:
-        env = config["params"]["breakdancer"],
+        env = config["params"]["manta"],
         threads = config["threads"],
-        # sample = config["samples"]["id"]
+        sample = config["samples"]["id"]
     shell:
         """
         vcftools --vcf {input.vcf} \
-        --indv {wildcards.PWD}/{wildcards.id} --recode --recode-INFO-all  \
-        --out {wildcards.PWD}/{wildcards.id}/lumpy/{wildcards.id} && \
+        --indv {wildcards.PWD}/{params.sample} --recode --recode-INFO-all  \
+        --out {wildcards.PWD}/lumpy/{params.sample} && \
         {params.env}/svtyper \
-        -i {wildcards.PWD}/{wildcards.id}/lumpy/{wildcards.id}.recode.vcf \
+        -i {wildcards.PWD}/lumpy/{params.sample}.recode.vcf \
         -B {input.bam} \
         -o {output}
         """
